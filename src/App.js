@@ -3,7 +3,7 @@ import './App.css';
 import React, { useState } from "react";
 
 const App = () => {
-  const stories = [
+    const stories = [
     {
       title: 'React',
       url: 'https://reactjs.org/',
@@ -12,7 +12,7 @@ const App = () => {
       points: 4,
       objectID: 0,
     },
-    
+
     {
       title: 'Redux',
       url: 'https://redux.js.org/',
@@ -21,42 +21,44 @@ const App = () => {
       points: 5,
       objectID: 1,
     },
-  ];
+    ];
 
-//   const a = [1, 2, 3, 4, 5, 6]
-//   const b = ['a', 'b', 'c', 'd', 'e', 'f']
-
-const [searchTerm, setSearchTerm] = useState('');
-const handleSearch = e => {
-    setSearchTerm(e.target.value);
-}
+const [searchTerm, setSearchTerm] = useState(
+    localStorage.getItem('search') || 'React'
+);
+const handleSearch = e => setSearchTerm(e.target.value);
 const searchedStories = stories.filter(story => 
     story.title.toLowerCase().includes(searchTerm.toLowerCase()));
     return (
-    <div>
-      <h1>My Hacker Stories</h1>
-      <Search onSearch={handleSearch} />
-      <hr />
-      <List list={searchedStories} />
-    </div>
-  );
+        <div>
+            <h1>My Hacker Stories</h1>
+            <Search search={searchTerm} onSearch={handleSearch} />
+            <hr />
+            <List list={searchedStories} />
+        </div>
+    );
 };
 
-const Search = props => (
+const Search = ({search, onSearch}) => (
     <div>
         <label htmlFor="search">Search: </label>
-        <input id="search" type="text" onChange={props.onSearch} />
+        <input 
+            id="search" 
+            type="text" 
+            value={search}
+            onChange={onSearch} />
     </div>
 );
         
-const List = props =>
-    props.list.map(item => (
-    <div key={item.objectID}>
+const List = ({list}) => list.map(item => <Item key={item.objectID} item={item} />);
+
+const Item = ({item}) => (
+    <div>
         <span><a href={item.url}>{item.title}</a></span>
         <span>{item.author}</span>
         <span>{item.num_comments}</span>
         <span>{item.points}</span>
     </div>
-));
+);
 
 export default App;
