@@ -12,6 +12,7 @@ const App = () => {
       points: 4,
       objectID: 0,
     },
+    
     {
       title: 'Redux',
       url: 'https://redux.js.org/',
