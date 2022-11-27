@@ -1,64 +1,157 @@
-// import logo from './logo.svg';
-import './App.css';
-import React, { useState } from "react";
+import React from 'react';
+
+const useSemiPersistentState = (key, initialState) => {
+  const [value, setValue] = React.useState(
+    localStorage.getItem(key) || initialState
+  );
+
+  React.useEffect(() => {
+    localStorage.setItem(key, value);
+  }, [value, key]);
+
+  return [value, setValue];
+};
+const initialStories = [
+    {
+    title: 'React',
+    url: 'https://reactjs.org/',
+    author: 'Jordan Walke',
+    num_comments: 3,
+    points: 4,
+    objectID: 0,
+    },
+    {
+    title: 'Redux',
+    url: 'https://redux.js.org/',
+    author: 'Dan Abramov, Andrew Clark',
+    num_comments: 2,
+    points: 5,
+    objectID: 1,
+    },
+];
+
+const getAsyncStories = () => 
+    new Promise(resolve => 
+        setTimeout(
+            () => resolve({ data: { stories: initialStories }}), 
+            2000)
+    );
 
 const App = () => {
-    const stories = [
-    {
-      title: 'React',
-      url: 'https://reactjs.org/',
-      author: 'Jordan Walke',
-      num_comments: 3,
-      points: 4,
-      objectID: 0,
-    },
+    const [stories, setStories] = React.useState([]);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [isError, setIsError] = React.useState(false);
 
-    {
-      title: 'Redux',
-      url: 'https://redux.js.org/',
-      author: 'Dan Abramov, Andrew Clark',
-      num_comments: 2,
-      points: 5,
-      objectID: 1,
-    },
-    ];
+    React.useEffect(() => {
+        setIsLoading(true)
+        getAsyncStories().then(result => {
+            setStories(result.data.stories);
+            setIsLoading(false);
+        })
+        .catch(() => setIsError(true));
+    }, []);
 
-const [searchTerm, setSearchTerm] = useState(
-    localStorage.getItem('search') || 'React'
-);
-const handleSearch = e => setSearchTerm(e.target.value);
-const searchedStories = stories.filter(story => 
-    story.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const handleRemoveStory = item => {
+        const newStories = stories.filter(story => item.objectID !== story.objectID);
+        setStories(newStories);
+    };
+    
+    const [searchTerm, setSearchTerm] = useSemiPersistentState(
+        'search',
+        'React'
+    );
+
+    const handleSearch = event => {
+        setSearchTerm(event.target.value);
+    };
+
+    const searchedStories = stories.filter(story =>
+        story.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <div>
             <h1>My Hacker Stories</h1>
-            <Search search={searchTerm} onSearch={handleSearch} />
+
+            <InputWithLabel
+                id="search"
+                value={searchTerm}
+                onInputChange={handleSearch}
+                isFocused>
+                        Search: 
+            </InputWithLabel>
+
             <hr />
-            <List list={searchedStories} />
+            
+            {isError && <p>Something went wrong...</p>}
+            
+            {isLoading ? (
+                <p>Loading...</p>
+            ) : (
+                <List list={searchedStories} onRemoveItem={handleRemoveStory} />
+            )}
+        
         </div>
     );
 };
 
-const Search = ({search, onSearch}) => (
-    <div>
-        <label htmlFor="search">Search: </label>
-        <input 
-            id="search" 
-            type="text" 
-            value={search}
-            onChange={onSearch} />
-    </div>
-);
-        
-const List = ({list}) => list.map(item => <Item key={item.objectID} item={item} />);
+const InputWithLabel = ({
+  id,
+  value,
+  type = 'text',
+  onInputChange,
+  isFocused,
+  children
+}) => {
+    const inputRef = React.useRef();
+    React.useEffect(()=> {
+        if (isFocused && inputRef.current) {
+            inputRef.current.focus()
+        };
+    }, [isFocused])
+    return (
+  <>
+    <label htmlFor={id}>{children}</label>
+    &nbsp;
+    <input
+      ref={inputRef}
+      id={id}
+      type={type}
+      value={value}
+      onChange={onInputChange}
+    />
+  </>
+)};
 
-const Item = ({item}) => (
-    <div>
-        <span><a href={item.url}>{item.title}</a></span>
-        <span>{item.author}</span>
-        <span>{item.num_comments}</span>
-        <span>{item.points}</span>
-    </div>
-);
+const List = ({ list, onRemoveItem }) =>
+    list.map(item => (
+        <Item 
+            key={item.objectID} 
+            item={item} 
+            onRemoveItem={onRemoveItem}
+        />
+    ));
+
+const Item = ({ item, onRemoveItem }) => {
+    return (
+        <div>
+            <span>
+                <a href={item.url}>{item.title}</a>
+            </span>
+            <span>{item.author}</span>
+            <span>{item.num_comments}</span>
+            <span>{item.points}</span>
+            <span>
+                <button 
+                    type="button" 
+                    onClick={()=> onRemoveItem(item)}
+                >       
+                    Dismiss
+                </button>
+            </span>
+        
+        </div>
+    );
+};
 
 export default App;
