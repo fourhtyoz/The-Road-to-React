@@ -90,7 +90,6 @@ const App = () => {
             ) : (
                 <List list={searchedStories} onRemoveItem={handleRemoveStory} />
             )}
-        
         </div>
     );
 };
